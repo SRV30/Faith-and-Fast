@@ -291,6 +291,16 @@ export const getSingleOrder = catchAsyncErrors(async (req, res) => {
       });
     }
 
+    if (
+      order.user._id.toString() !== req.user._id.toString() &&
+      req.user.role !== "ADMIN"
+    ) {
+      return res.status(403).json({
+        success: false,
+        message: "Unauthorized to view this order",
+      });
+    }
+
     res.status(200).json({
       success: true,
       order,
