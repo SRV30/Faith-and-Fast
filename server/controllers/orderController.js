@@ -436,11 +436,31 @@ export const updateOrderStatus = catchAsyncErrors(async (req, res) => {
         stockUpdates.push({ product, quantity: item.quantity });
       }
 
-      // PHASE 2 — all items validated; apply every deduction. Each product has
-      // already been confirmed to have sufficient stock above.
+      // PHASE 2 — apply each deduction with an atomic conditional update that
+      // re-checks sufficient stock at write time, closing the race between the
+      // Phase 1 read above and this write. findOneAndUpdate with a
+      // `stock: { $gte: quantity }` guard plus `$inc` decrements in a single
+      // atomic DB operation, so two concurrent shipments of the same product
+      // can never both pass the check and drive stock negative. (Like the
+      // previous save, this skips schema validators, which findOneAndUpdate
+      // does by default.)
       for (const { product, quantity } of stockUpdates) {
-        product.stock -= quantity;
-        await product.save({ validateBeforeSave: false });
+        const updated = await ProductModel.findOneAndUpdate(
+          { _id: product._id, stock: { $gte: quantity } },
+          { $inc: { stock: -quantity } },
+          { new: true }
+        );
+
+        if (!updated) {
+          // Stock changed since Phase 1 (a concurrent shipment consumed it).
+          // Some earlier items in this loop may already be deducted; surface a
+          // clear conflict so the operator can reconcile, rather than silently
+          // under-deducting or going negative.
+          return res.status(409).json({
+            success: false,
+            message: `Stock for "${product.name}" changed and can no longer be safely deducted. Please retry.`,
+          });
+        }
       }
 
       // Mark the order so the same stock is never deducted again.
