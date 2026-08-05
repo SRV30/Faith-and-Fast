@@ -50,30 +50,6 @@ export const getWishListItems = createAsyncThunk(
   }
 );
 
-export const updateWishListItemQty = createAsyncThunk(
-  'wishList/updateWishListItemQty',
-  async ({ _id, qty }, { rejectWithValue }) => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await axiosInstance.put(
-        '/api/wishList/update',
-        { _id, qty },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          withCredentials: true,
-        }
-      );
-      return response.data;
-    } catch (error) {
-      return rejectWithValue(
-        error.response?.data?.message || 'Failed to update WishList quantity'
-      );
-    }
-  }
-);
-
 export const deleteWishListItem = createAsyncThunk(
   'wishList/deleteWishListItem',
   async (_id, { rejectWithValue }) => {
@@ -129,21 +105,6 @@ const WishListSlice = createSlice({
         state.WishListItems = action.payload.data;
       })
       .addCase(getWishListItems.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload;
-      })
-
-      .addCase(updateWishListItemQty.pending, (state) => {
-        state.loading = true;
-      })
-      .addCase(updateWishListItemQty.fulfilled, (state, action) => {
-        state.loading = false;
-        const updatedItem = action.payload.data;
-        state.WishListItems = state.WishListItems.map((item) =>
-          item._id === updatedItem._id ? updatedItem : item
-        );
-      })
-      .addCase(updateWishListItemQty.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       })
