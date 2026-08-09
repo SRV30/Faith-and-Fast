@@ -23,4 +23,10 @@ export default function validateEnv() {
     console.error('\nCheck your .env file against server/.env\n');
     process.exit(1);
   }
+
+  const env = process.env.NODE_ENV || "development";
+  console.log(`[validateEnv] Environment: ${env}`);
+  if (!["development", "production", "test"].includes(env)) {
+    console.warn(`[validateEnv] Warning: Unrecognized environment "${env}". Use development, production, or test.`);
+  }
 }
