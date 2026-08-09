@@ -11,23 +11,15 @@ import {
   updateOrderStatus,
   uploadPaymentScreenshot,
   verifyPayment,
-  downloadInvoice,
-} from '../controllers/orderController.js';
-import admin from '../middleware/Admin.js';
-import upload from '../middleware/multer.js';
-import { getOrderAnalytics } from '../controllers/analyticsController.js';
-import optionalAuth from '../middleware/optionalAuth.js';
-import { orderLimiter } from '../middleware/rateLimiter.js';
-import { cacheMiddleware, invalidateCache } from '../utils/cache.js';
-import validate from '../middleware/validate.js';
-import { createOrderSchema } from '../validation/orderValidation.js';
+} from "../controllers/orderController.js";
+import admin from "../middleware/Admin.js";
+import upload from "../middleware/multer.js";
+import { getOrderAnalytics } from "../controllers/analyticsController.js";
+import { orderValidation } from "../middleware/validator.js";
 
 const orderRouter = express.Router();
 
-const clearOrderAnalyticsCache = async (req, res, next) => {
-  await invalidateCache('orders:analytics*');
-  next();
-};
+orderRouter.post("/create", auth, orderValidation.create, createOrder);
 
 orderRouter.post(
   '/create',
@@ -69,7 +61,7 @@ orderRouter.get('/get/:orderId', auth, getSingleOrder);
 
 orderRouter.put('/admin/update/:orderId', auth, admin, clearOrderAnalyticsCache, updateOrderStatus);
 
-orderRouter.put('/cancel/:orderId', auth, clearOrderAnalyticsCache, cancelOrder);
+orderRouter.put("/admin/update/:orderId", auth, admin, orderValidation.updateStatus, updateOrderStatus);
 
 orderRouter.delete('/admin/delete/:orderId', auth, admin, clearOrderAnalyticsCache, deleteOrder);
 

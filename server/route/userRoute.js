@@ -16,44 +16,31 @@ import {
   uploadAvatar,
   verifyEmailOtp,
   verifyOtp,
-} from '../controllers/userController.js';
-import auth from '../middleware/auth.js';
-import upload from '../middleware/multer.js';
-import admin from '../middleware/Admin.js';
-import {
-  authLimiter,
-  passwordResetLimiter,
-} from '../middleware/rateLimiter.js';
-import validate from '../middleware/validate.js';
-import {
-  registerSchema,
-  loginSchema,
-  verifyEmailOtpSchema,
-  resendOtpSchema,
-  forgotPasswordSchema,
-  resetPasswordSchema,
-  updateUserRoleSchema,
-} from '../validation/userValidation.js';
+} from "../controllers/userController.js";
+import auth from "../middleware/auth.js";
+import upload from "../middleware/multer.js";
+import admin from "../middleware/Admin.js";
+import { userValidation } from "../middleware/validator.js";
 
 const userRouter = express.Router();
 
-userRouter.post('/register', authLimiter, validate(registerSchema), registerUser);
+userRouter.post("/register", userValidation.register, registerUser);
 
 userRouter.post('/verify-email', authLimiter, validate(verifyEmailOtpSchema), verifyEmailOtp);
 
 userRouter.post('/resend-otp', authLimiter, validate(resendOtpSchema), resendOtp);
 
-userRouter.post('/login', authLimiter, validate(loginSchema), loginUser);
+userRouter.post("/login", userValidation.login, loginUser);
 
 userRouter.get('/logout', logoutUser);
 
 userRouter.put('/upload-avatar', upload.single('avatar'), auth, uploadAvatar);
 
-userRouter.put('/forgot-password', passwordResetLimiter, validate(forgotPasswordSchema), forgotPassword);
+userRouter.put("/forgot-password", userValidation.forgotPassword, forgotPassword);
 
 userRouter.put('/verify-otp', authLimiter, validate(verifyEmailOtpSchema), verifyOtp);
 
-userRouter.put('/reset-password', passwordResetLimiter, validate(resetPasswordSchema), resetPassword);
+userRouter.put("/reset-password", userValidation.resetPassword, resetPassword);
 
 userRouter.get('/me', auth, getUserDetails);
 
